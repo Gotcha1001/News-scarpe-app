@@ -17,6 +17,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, useReducedMotion } from "framer-motion";
+import { useMemo } from "react";
+import { useColorTheme } from "@/app/context/ColorThemeContext";
+import { buildHudGridBackground } from "@/lib/colorThemes";
 
 const NAV_ITEMS = [
   { href: "/news", label: "Today's News", icon: Newspaper },
@@ -24,16 +27,24 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-const GRID_BG =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%2322d3ee' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M24 18v12M18 24h12'/%3E%3C/g%3E%3C/svg%3E";
-
 const flicker = {
   opacity: [0.55, 0.9, 0.5, 1, 0.6, 0.85, 0.55],
   scale: [0.95, 1.05, 0.92, 1.1, 0.97, 1.04, 0.95],
 };
 
-/** Mini orbiting cyan core — scaled-down version of the modal / navbar brand mark. */
-function SidebarBrandMark() {
+function SidebarBrandMark({
+  hex400,
+  hex300,
+  hex500,
+  hex600,
+  hex700,
+}: {
+  hex400: string;
+  hex300: string;
+  hex500: string;
+  hex600: string;
+  hex700: string;
+}) {
   const reduceMotion = useReducedMotion();
   const spin = (reverse = false) =>
     reduceMotion ? undefined : { rotate: reverse ? -360 : 360 };
@@ -45,17 +56,20 @@ function SidebarBrandMark() {
   return (
     <div className="relative flex size-8 shrink-0 items-center justify-center">
       <motion.div
-        className="absolute inset-0 rounded-full border border-dashed border-cyan-400/40"
+        className="absolute inset-0 rounded-full border border-dashed"
+        style={{ borderColor: `${hex400}66` }}
         animate={spin()}
         transition={spinTransition(10)}
       />
       <motion.div
-        className="absolute inset-1 rounded-full border border-cyan-600/40"
+        className="absolute inset-1 rounded-full border"
+        style={{ borderColor: `${hex600}66` }}
         animate={spin(true)}
         transition={spinTransition(6.5)}
       />
       <motion.div
-        className="absolute inset-0 rounded-full border-2 border-cyan-300/30"
+        className="absolute inset-0 rounded-full border-2"
+        style={{ borderColor: `${hex300}4d` }}
         animate={
           reduceMotion
             ? undefined
@@ -64,11 +78,19 @@ function SidebarBrandMark() {
         transition={{ duration: 1.8, repeat: Infinity }}
       />
       <motion.div
-        className="absolute h-4 w-4 rounded-full bg-cyan-300 blur-md"
+        className="absolute h-4 w-4 rounded-full blur-md"
+        style={{ backgroundColor: hex300 }}
         animate={reduceMotion ? undefined : flicker}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       />
-      <div className="relative flex size-5 items-center justify-center rounded-full border border-cyan-400/50 bg-gradient-to-br from-cyan-700 to-cyan-500 shadow-[0_0_12px_-2px_rgba(34,211,238,0.9)] text-[11px]">
+      <div
+        className="relative flex size-5 items-center justify-center rounded-full border text-[11px]"
+        style={{
+          borderColor: `${hex400}80`,
+          background: `linear-gradient(to bottom right, ${hex700}, ${hex500})`,
+          boxShadow: `0 0 12px -2px ${hex400}e6`,
+        }}
+      >
         🌐
       </div>
     </div>
@@ -79,23 +101,37 @@ export function AppSidebar() {
   const { user } = useUser();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+  const { theme } = useColorTheme();
+  const gridBg = useMemo(() => buildHudGridBackground(theme), [theme]);
+  const { hex400, shades } = theme;
 
   return (
     <Sidebar
       collapsible="icon"
-      className="relative overflow-hidden border-slate-200 bg-white text-slate-900 dark:border-cyan-400/20 dark:bg-[#04070a] dark:text-cyan-50 dark:shadow-[0_0_40px_-12px_rgba(34,211,238,0.35)]"
+      className="relative overflow-hidden border-slate-200 bg-white text-slate-900 dark:bg-[#04070a] dark:text-stone-50"
+      style={
+        {
+          // dark border + glow driven by theme
+          ["--sidebar-border" as string]: undefined,
+        } as React.CSSProperties
+      }
     >
-      {/* ===== HUD background layers (dark mode) ===== */}
+      {/* HUD background layers (dark mode) */}
       <div className="pointer-events-none absolute inset-0 hidden dark:block">
         <div
           className="absolute inset-0 opacity-30"
           style={{
-            backgroundImage: `url("${GRID_BG}")`,
+            backgroundImage: `url("${gridBg}")`,
             backgroundSize: "48px 48px",
           }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#0a1219_0%,_#04070a_75%)]" />
-        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-400/40 to-transparent" />
+        <div
+          className="absolute inset-y-0 right-0 w-px"
+          style={{
+            background: `linear-gradient(to bottom, transparent, ${hex400}66, transparent)`,
+          }}
+        />
         {[
           "-left-px -top-px border-l-2 border-t-2",
           "-right-px -top-px border-r-2 border-t-2",
@@ -104,19 +140,23 @@ export function AppSidebar() {
         ].map((cls) => (
           <div
             key={cls}
-            className={`absolute ${cls} h-4 w-4 border-cyan-400/50`}
+            className={`absolute ${cls} h-4 w-4`}
+            style={{ borderColor: `${hex400}80` }}
           />
         ))}
         {!reduceMotion && (
           <motion.div
-            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent"
+            className="absolute left-0 right-0 h-px"
+            style={{
+              background: `linear-gradient(to right, transparent, ${shades[300]}66, transparent)`,
+            }}
             animate={{ top: ["0%", "100%"] }}
             transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
           />
         )}
       </div>
 
-      {/* ===== content (sits above the HUD layers) ===== */}
+      {/* content */}
       <div className="relative z-10 flex h-full flex-col">
         <SidebarHeader>
           <SidebarMenu>
@@ -124,20 +164,24 @@ export function AppSidebar() {
               <SidebarMenuButton
                 size="lg"
                 asChild
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground dark:hover:bg-cyan-400/10"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground dark:hover:bg-white/5"
               >
                 <Link href="/">
-                  <SidebarBrandMark />
+                  <SidebarBrandMark
+                    hex400={hex400}
+                    hex300={shades[300]}
+                    hex500={shades[500]}
+                    hex600={shades[600]}
+                    hex700={shades[700]}
+                  />
                   <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-black tracking-tight">
-                      <span className="text-cyan-600 dark:text-cyan-300">
-                        GLOBE
-                      </span>
-                      <span className="text-cyan-700 dark:text-cyan-500">
+                      <span style={{ color: hex400 }}>GLOBE</span>
+                      <span className="text-slate-700 dark:text-stone-300">
                         WIRE
                       </span>
                     </span>
-                    <span className="truncate text-[10px] text-slate-500 dark:text-cyan-200/40">
+                    <span className="truncate text-[10px] text-slate-500 dark:text-stone-400">
                       Today&apos;s news, decoded
                     </span>
                   </div>
@@ -149,7 +193,7 @@ export function AppSidebar() {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-400 dark:text-cyan-200/50 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel className="text-slate-400 dark:text-stone-500 group-data-[collapsible=icon]:hidden">
               Navigation
             </SidebarGroupLabel>
             <SidebarMenu>
@@ -161,22 +205,20 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={label}
-                      className={`
-                        text-slate-600 hover:bg-slate-100 hover:text-slate-900
-                        dark:text-cyan-100/80 dark:hover:bg-cyan-400/10 dark:hover:text-cyan-50
-                        data-[active=true]:bg-slate-100 data-[active=true]:text-slate-900
-                        dark:data-[active=true]:bg-cyan-400/15 dark:data-[active=true]:text-cyan-50
-                        dark:data-[active=true]:shadow-[0_0_12px_-2px_rgba(34,211,238,0.5)]
-                      `}
+                      className="text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-stone-300 dark:hover:bg-white/5 dark:hover:text-stone-50 data-[active=true]:bg-slate-100 data-[active=true]:text-slate-900 dark:data-[active=true]:bg-white/10 dark:data-[active=true]:text-stone-50"
+                      style={
+                        isActive
+                          ? {
+                              boxShadow: `0 0 12px -2px ${hex400}80`,
+                              backgroundColor: `${hex400}26`,
+                            }
+                          : undefined
+                      }
                     >
                       <Link href={href}>
                         <Icon
                           size={16}
-                          className={
-                            isActive
-                              ? "text-cyan-600 dark:text-cyan-300"
-                              : undefined
-                          }
+                          style={isActive ? { color: hex400 } : undefined}
                         />
                         <span>{label}</span>
                       </Link>
@@ -194,18 +236,25 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   size="lg"
-                  className="dark:hover:bg-cyan-400/10 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="dark:hover:bg-white/5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <div className="relative flex aspect-square size-8 items-center justify-center">
-                    <div className="flex size-7 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15 text-sm shadow-[0_0_10px_-2px_rgba(34,211,238,0.5)]">
+                    <div
+                      className="flex size-7 items-center justify-center rounded-full border text-sm"
+                      style={{
+                        borderColor: `${hex400}4d`,
+                        backgroundColor: `${shades[500]}26`,
+                        boxShadow: `0 0 10px -2px ${hex400}80`,
+                      }}
+                    >
                       📰
                     </div>
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-xs font-semibold text-slate-900 dark:text-cyan-50">
+                    <span className="truncate text-xs font-semibold text-slate-900 dark:text-stone-50">
                       {user.fullName ?? user.username}
                     </span>
-                    <span className="truncate text-[10px] text-slate-500 dark:text-cyan-200/40">
+                    <span className="truncate text-[10px] text-slate-500 dark:text-stone-400">
                       {user.primaryEmailAddress?.emailAddress}
                     </span>
                   </div>

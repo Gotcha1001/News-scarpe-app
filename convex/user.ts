@@ -5,9 +5,8 @@ export const createOrGet = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-
     if (!identity) {
-      throw new Error("Unauthorized – no identity found");
+      throw new Error("Unauthorized -- no identity found");
     }
 
     console.log("[createOrGet] Identity:", JSON.stringify(identity, null, 2));
@@ -26,14 +25,12 @@ export const createOrGet = mutation({
 
     // Safe extraction
     const email = typeof identity.email === "string" ? identity.email : "";
-
     const name =
       typeof identity.name === "string"
         ? identity.name
         : typeof identity.givenName === "string"
           ? identity.givenName
           : "Unknown User";
-
     // Use givenName / familyName if you want to store them separately later
     // For now we're keeping name as full name
     const imageUrl =
@@ -62,7 +59,6 @@ export const createOrGet = mutation({
     });
 
     const newUser = await ctx.db.get(userId);
-
     if (newUser) {
       console.log("[createOrGet] Successfully created user:", newUser._id);
     } else {
@@ -77,12 +73,41 @@ export const getMe = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-
     return (
       (await ctx.db
         .query("users")
         .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
         .first()) ?? null
     );
+  },
+});
+
+/**
+ * Persists the signed-in user's chosen accent color theme so it follows
+ * them across devices. ColorThemeContext.tsx calls this every time
+ * setThemeId() runs (fire-and-forget) and also seeds the picker's initial
+ * value from getMe().colorTheme on load.
+ *
+ * We intentionally take a plain string here rather than importing
+ * ColorThemeId from lib/colorThemes.ts -- Convex's validators run in a
+ * separate bundle and shouldn't depend on frontend-only types. The
+ * frontend re-validates with isColorThemeId() before ever applying a
+ * value it reads back.
+ */
+export const setColorTheme = mutation({
+  args: { colorTheme: v.string() },
+  handler: async (ctx, { colorTheme }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized -- no identity found");
+    }
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+    if (!existing) {
+      throw new Error("User record not found for signed-in identity");
+    }
+    await ctx.db.patch(existing._id, { colorTheme });
   },
 });

@@ -1,10 +1,11 @@
 // app/news/[runId]/page.tsx
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArchivedRunFeed } from "@/app/components/news/ArchivedRunFeed";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useColorTheme } from "@/app/context/ColorThemeContext";
 
 const READOUTS = [
   ["ARCH", "RUN", "ID"],
@@ -38,6 +39,8 @@ interface ArchivedNewsPageProps {
 export default function ArchivedNewsPage({ params }: ArchivedNewsPageProps) {
   const { runId } = use(params);
   const reduceMotion = useReducedMotion();
+  const { theme } = useColorTheme();
+  const { hex400, shades } = theme;
 
   return (
     <div className="relative min-h-[calc(100vh-7rem)]">
@@ -51,14 +54,12 @@ export default function ArchivedNewsPage({ params }: ArchivedNewsPageProps) {
               left: col.left,
               color:
                 i % 3 === 0
-                  ? "rgba(34,211,238,0.16)"
+                  ? `${hex400}29`
                   : i % 3 === 1
-                    ? "rgba(34,211,238,0.11)"
+                    ? `${hex400}1c`
                     : "rgba(220,38,38,0.09)",
               textShadow:
-                i % 3 === 0
-                  ? "0 0 10px rgba(34,211,238,0.4)"
-                  : "0 0 6px rgba(34,211,238,0.2)",
+                i % 3 === 0 ? `0 0 10px ${hex400}66` : `0 0 6px ${hex400}33`,
               maskImage:
                 "linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%)",
               WebkitMaskImage:
@@ -85,11 +86,12 @@ export default function ArchivedNewsPage({ params }: ArchivedNewsPageProps) {
       {PULSES.map((s, i) => (
         <motion.span
           key={i}
-          className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full bg-cyan-300/70"
+          className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full"
           style={{
             top: s.top,
             left: s.left,
-            boxShadow: "0 0 8px 2px rgba(34,211,238,0.45)",
+            backgroundColor: shades[300],
+            boxShadow: `0 0 8px 2px ${hex400}73`,
           }}
           animate={reduceMotion ? undefined : { opacity: [0.04, 0.5, 0.04] }}
           transition={{

@@ -11,6 +11,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { formatFullDate } from "@/lib/formData";
 import { HudLabel, HudPanel } from "@/app/components/HudPanel";
 import { SearchBar } from "@/app/components/SearchBar";
+import { useColorTheme } from "@/app/context/ColorThemeContext";
 
 const READOUTS = [
   ["ARCH", "2024", "RUN"],
@@ -38,11 +39,12 @@ export default function ArchivePage() {
   const runs = useQuery(api.news.getRecentRuns, { limit: 30 });
   const deleteRun = useMutation(api.news.deleteRun);
   const deleteAllRuns = useMutation(api.news.deleteAllRuns);
-
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<Id<"newsRuns"> | null>(null);
   const [clearing, setClearing] = useState(false);
   const reduceMotion = useReducedMotion();
+  const { theme } = useColorTheme();
+  const { hex400, shades } = theme;
 
   const filteredRuns = useMemo(() => {
     if (!runs) return runs;
@@ -84,8 +86,7 @@ export default function ArchivePage() {
             className="absolute top-0 flex flex-col gap-6 font-[family-name:var(--font-hud)] text-[10px]"
             style={{
               left: col.left,
-              color:
-                i % 2 === 0 ? "rgba(34,211,238,0.25)" : "rgba(220,38,38,0.16)",
+              color: i % 2 === 0 ? `${hex400}40` : "rgba(220,38,38,0.16)",
               maskImage:
                 "linear-gradient(to bottom, transparent, black 18%, black 72%, transparent)",
               WebkitMaskImage:
@@ -110,8 +111,8 @@ export default function ArchivePage() {
       {PULSES.map((s, i) => (
         <motion.span
           key={i}
-          className="pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-cyan-300"
-          style={{ top: s.top, left: s.left }}
+          className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
+          style={{ top: s.top, left: s.left, backgroundColor: shades[300] }}
           animate={reduceMotion ? undefined : { opacity: [0.1, 0.5, 0.1] }}
           transition={{
             duration: 3.4,
@@ -125,11 +126,10 @@ export default function ArchivePage() {
       <div className="relative mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <HudLabel>Archive</HudLabel>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-black tracking-tight text-cyan-50">
-            News <span className="text-cyan-400">Archive</span>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-black tracking-tight text-stone-50">
+            News <span style={{ color: hex400 }}>Archive</span>
           </h1>
         </div>
-
         {runs && runs.length > 0 && (
           <button
             type="button"
@@ -154,7 +154,7 @@ export default function ArchivePage() {
       />
 
       {runs === undefined && (
-        <p className="font-[family-name:var(--font-hud)] text-xs uppercase tracking-[0.2em] text-cyan-200/40">
+        <p className="font-[family-name:var(--font-hud)] text-xs uppercase tracking-[0.2em] text-stone-500">
           Loading archive...
         </p>
       )}
@@ -172,29 +172,36 @@ export default function ArchivePage() {
       <ul className="relative flex flex-col gap-3">
         {filteredRuns?.map((run) => (
           <li key={run._id}>
-            <HudPanel className="transition-all duration-200 hover:border-cyan-400/60 hover:shadow-[0_0_45px_-14px_rgba(34,211,238,0.5)]">
+            <HudPanel className="transition-all duration-200">
               <div className="flex items-center gap-3 p-4">
                 <Link
                   href={`/news/${run._id}`}
                   className="group min-w-0 flex-1"
                 >
-                  <p className="font-[family-name:var(--font-hud)] text-[11px] uppercase tracking-[0.15em] text-cyan-200/40">
+                  <p className="font-[family-name:var(--font-hud)] text-[11px] uppercase tracking-[0.15em] text-stone-500">
                     {run.completedAt
                       ? formatFullDate(run.completedAt)
                       : "Unknown date"}
                   </p>
-                  <p className="mt-1 truncate text-sm font-semibold text-cyan-50 group-hover:text-cyan-300">
-                    {run.summary ?? "Untitled digest"}
+                  <p
+                    className="mt-1 truncate text-sm font-semibold text-stone-50 transition-colors group-hover:opacity-90"
+                    style={
+                      {
+                        // hover color applied via onMouseEnter below would need state per row;
+                        // use a simple accent on the chevron instead for clarity
+                      } as React.CSSProperties
+                    }
+                  >
+                    <ArchiveRowTitle summary={run.summary} hex400={hex400} />
                   </p>
                 </Link>
-
                 <button
                   type="button"
                   title="Delete digest"
                   aria-label="Delete digest"
                   disabled={deletingId === run._id}
                   onClick={() => handleDelete(run._id)}
-                  className="shrink-0 rounded-md border border-transparent p-1.5 text-cyan-200/40 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                  className="shrink-0 rounded-md border border-transparent p-1.5 text-stone-500 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                 >
                   {deletingId === run._id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -202,9 +209,11 @@ export default function ArchivePage() {
                     <Trash2 className="h-4 w-4" />
                   )}
                 </button>
-
                 <Link href={`/news/${run._id}`}>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-cyan-400/50 transition-colors hover:text-cyan-300" />
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 transition-colors"
+                    style={{ color: `${hex400}80` }}
+                  />
                 </Link>
               </div>
             </HudPanel>
@@ -212,5 +221,26 @@ export default function ArchivePage() {
         ))}
       </ul>
     </div>
+  );
+}
+
+/** Title that shifts to accent on hover without per-row state. */
+function ArchiveRowTitle({
+  summary,
+  hex400,
+}: {
+  summary: string | undefined;
+  hex400: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <span
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ color: hovered ? hex400 : "#fafaf9" }}
+      className="transition-colors"
+    >
+      {summary ?? "Untitled digest"}
+    </span>
   );
 }

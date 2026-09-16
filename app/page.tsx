@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Compass, RefreshCw, Archive, Globe2 } from "lucide-react";
+import { useColorTheme } from "@/app/context/ColorThemeContext";
+import { buildHudGridBackground } from "@/lib/colorThemes";
 
 const FEATURES = [
   {
@@ -30,7 +32,6 @@ const FEATURES = [
   },
 ];
 
-// Fixed positions — no Math.random() so SSR/client markup matches
 const PULSES = [
   { top: "10%", left: "8%", delay: 0 },
   { top: "18%", left: "88%", delay: 0.8 },
@@ -40,7 +41,6 @@ const PULSES = [
   { top: "52%", left: "3%", delay: 1.1 },
 ];
 
-// Wire-flavored version of the modal's readouts
 const READOUTS = [
   ["WIRE", "AP", "24H"],
   ["WORLD", "BIZ", "TECH"],
@@ -56,9 +56,6 @@ const RAIN_COLUMNS = Array.from({ length: 8 }).map((_, i) => ({
   delay: (i % 5) * 0.6,
 }));
 
-const GRID_BG =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%2322d3ee' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M24 18v12M18 24h12'/%3E%3C/g%3E%3C/svg%3E";
-
 const flicker = {
   opacity: [0.55, 0.9, 0.5, 1, 0.6, 0.85, 0.55],
   scale: [0.95, 1.05, 0.92, 1.1, 0.97, 1.04, 0.95],
@@ -68,6 +65,9 @@ export default function Home() {
   const { isSignedIn } = useUser();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const { theme } = useColorTheme();
+  const { hex400, shades } = theme;
+  const gridBg = useMemo(() => buildHudGridBackground(theme), [theme]);
 
   const spin = (reverse = false) =>
     reduceMotion ? undefined : { rotate: reverse ? -360 : 360 };
@@ -82,11 +82,11 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-stone-100">
-      {/* coordinate-grid texture, same token as NewsGeneratingModal */}
+      {/* coordinate-grid texture */}
       <div
         className="pointer-events-none fixed inset-0 opacity-40"
         style={{
-          backgroundImage: `url("${GRID_BG}")`,
+          backgroundImage: `url("${gridBg}")`,
           backgroundSize: "48px 48px",
         }}
       />
@@ -100,8 +100,7 @@ export default function Home() {
             className="absolute top-0 flex flex-col gap-5 font-[family-name:var(--font-hud)] text-[10px]"
             style={{
               left: col.left,
-              color:
-                i % 2 === 0 ? "rgba(34,211,238,0.35)" : "rgba(220,38,38,0.25)",
+              color: i % 2 === 0 ? `${hex400}59` : "rgba(220,38,38,0.25)",
               maskImage:
                 "linear-gradient(to bottom, transparent, black 25%, black 65%, transparent)",
               WebkitMaskImage:
@@ -127,8 +126,8 @@ export default function Home() {
         {PULSES.map((p, i) => (
           <motion.span
             key={i}
-            className="absolute h-1.5 w-1.5 rounded-full bg-cyan-300"
-            style={{ top: p.top, left: p.left }}
+            className="absolute h-1.5 w-1.5 rounded-full"
+            style={{ top: p.top, left: p.left, backgroundColor: shades[300] }}
             animate={reduceMotion ? undefined : { opacity: [0.1, 0.7, 0.1] }}
             transition={{
               duration: 3,
@@ -141,20 +140,23 @@ export default function Home() {
       </div>
 
       <section className="relative mx-auto flex max-w-3xl flex-col items-center px-6 pb-16 pt-24 text-center">
-        {/* ===== flickering core, scaled up from the modal ===== */}
+        {/* flickering core */}
         <div className="relative mx-auto mb-10 flex h-32 w-32 items-center justify-center">
           <motion.div
-            className="absolute inset-0 rounded-full border border-dashed border-cyan-400/35"
+            className="absolute inset-0 rounded-full border border-dashed"
+            style={{ borderColor: `${hex400}59` }}
             animate={spin()}
             transition={spinTransition(14)}
           />
           <motion.div
-            className="absolute inset-3 rounded-full border border-cyan-600/40"
+            className="absolute inset-3 rounded-full border"
+            style={{ borderColor: `${shades[600]}66` }}
             animate={spin(true)}
             transition={spinTransition(9)}
           />
           <motion.div
-            className="absolute inset-0 rounded-full border-2 border-cyan-300/30"
+            className="absolute inset-0 rounded-full border-2"
+            style={{ borderColor: `${shades[300]}4d` }}
             animate={
               reduceMotion
                 ? undefined
@@ -163,20 +165,31 @@ export default function Home() {
             transition={{ duration: 1.8, repeat: Infinity }}
           />
           <motion.div
-            className="absolute h-16 w-16 rounded-full bg-cyan-300 blur-2xl"
+            className="absolute h-16 w-16 rounded-full blur-2xl"
+            style={{ backgroundColor: shades[300] }}
             animate={reduceMotion ? undefined : flicker}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-cyan-400/50 bg-gradient-to-br from-cyan-700 to-cyan-500 shadow-[0_0_45px_-6px_rgba(34,211,238,0.9)]">
+          <div
+            className="relative flex h-20 w-20 items-center justify-center rounded-full border"
+            style={{
+              borderColor: `${hex400}80`,
+              background: `linear-gradient(to bottom right, ${shades[700]}, ${shades[500]})`,
+              boxShadow: `0 0 45px -6px ${hex400}e6`,
+            }}
+          >
             <Globe2 className="h-9 w-9 text-[#04070a]" />
           </div>
         </div>
 
-        <p className="text-sm font-medium tracking-wide text-cyan-400">
+        <p
+          className="text-sm font-medium tracking-wide"
+          style={{ color: hex400 }}
+        >
           AI-curated world news
         </p>
         <h1 className="mt-3 max-w-2xl font-[family-name:var(--font-display)] text-5xl leading-[1.1] text-stone-50 md:text-6xl">
-          <span className="text-cyan-400">GLOBE</span>WIRE
+          <span style={{ color: hex400 }}>GLOBE</span>WIRE
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone-400">
           The world&apos;s top stories, scraped, summarized, and served fresh —
@@ -184,12 +197,24 @@ export default function Home() {
           into a clean digest, and every run is saved so you can look back on
           any day&apos;s news.
         </p>
+
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {isSignedIn ? (
             <Button
               size="lg"
-              className="border border-cyan-400/40 bg-cyan-500 px-8 py-6 text-base text-[#04070a] shadow-[0_0_30px_-6px_rgba(34,211,238,0.6)] hover:bg-cyan-400"
+              className="border px-8 py-6 text-base text-[#04070a]"
+              style={{
+                borderColor: `${hex400}66`,
+                backgroundColor: shades[500],
+                boxShadow: `0 0 30px -6px ${hex400}99`,
+              }}
               onClick={() => router.push("/news")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = hex400;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = shades[500];
+              }}
             >
               Read today&apos;s news
             </Button>
@@ -198,7 +223,12 @@ export default function Home() {
               <SignInButton mode="modal" forceRedirectUrl="/news">
                 <Button
                   size="lg"
-                  className="border border-cyan-400/40 bg-cyan-500 px-8 py-6 text-base text-[#04070a] shadow-[0_0_30px_-6px_rgba(34,211,238,0.6)] hover:bg-cyan-400"
+                  className="border px-8 py-6 text-base text-[#04070a]"
+                  style={{
+                    borderColor: `${hex400}66`,
+                    backgroundColor: shades[500],
+                    boxShadow: `0 0 30px -6px ${hex400}99`,
+                  }}
                 >
                   Sign in to start reading
                 </Button>
@@ -207,7 +237,10 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-cyan-400/25 px-8 py-6 text-base text-stone-300 hover:bg-cyan-400/10"
+                  className="border px-8 py-6 text-base text-stone-300"
+                  style={{
+                    borderColor: `${hex400}40`,
+                  }}
                 >
                   Create account
                 </Button>
@@ -217,16 +250,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== feature rows, styled like the modal's step list ===== */}
+      {/* feature rows */}
       <section className="relative mx-auto max-w-2xl px-6 py-16">
         <div className="flex flex-col gap-4">
           {FEATURES.map((feature, i) => (
             <div
               key={feature.title}
-              className="relative flex items-center gap-4 rounded-xl border border-cyan-400/20 bg-[#060b0f]/80 p-5 shadow-[0_0_35px_-10px_rgba(34,211,238,0.45)] backdrop-blur-sm"
+              className="relative flex items-center gap-4 rounded-xl border bg-[#060b0f]/80 p-5 backdrop-blur-sm"
+              style={{
+                borderColor: `${hex400}33`,
+                boxShadow: `0 0 35px -10px ${hex400}73`,
+              }}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/5">
-                <feature.icon className="h-5 w-5 text-cyan-300" />
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border"
+                style={{
+                  borderColor: `${hex400}4d`,
+                  backgroundColor: `${hex400}0d`,
+                }}
+              >
+                <feature.icon
+                  className="h-5 w-5"
+                  style={{ color: shades[300] }}
+                />
               </div>
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-stone-100">
@@ -238,7 +284,11 @@ export default function Home() {
               </div>
               <span className="ml-auto flex shrink-0 items-center">
                 <motion.span
-                  className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_3px_rgba(34,211,238,0.6)]"
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    backgroundColor: hex400,
+                    boxShadow: `0 0 10px 3px ${hex400}99`,
+                  }}
                   animate={
                     reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }
                   }
@@ -253,10 +303,17 @@ export default function Home() {
             </div>
           ))}
         </div>
-        {/* progress-bar echo from the bottom of the modal */}
-        <div className="mt-8 h-px w-full overflow-hidden rounded-full bg-cyan-400/10">
+
+        {/* progress-bar echo */}
+        <div
+          className="mt-8 h-px w-full overflow-hidden rounded-full"
+          style={{ backgroundColor: `${hex400}1a` }}
+        >
           <motion.div
-            className="h-full w-1/3 bg-gradient-to-r from-transparent via-cyan-300 to-transparent"
+            className="h-full w-1/3"
+            style={{
+              background: `linear-gradient(to right, transparent, ${shades[300]}, transparent)`,
+            }}
             animate={reduceMotion ? undefined : { x: ["-100%", "300%"] }}
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
           />
@@ -271,7 +328,12 @@ export default function Home() {
           <Link href={isSignedIn ? "/news" : "/sign-up"}>
             <Button
               size="lg"
-              className="border border-cyan-400/40 bg-cyan-500 px-8 py-6 text-base text-[#04070a] shadow-[0_0_30px_-6px_rgba(34,211,238,0.6)] hover:bg-cyan-400"
+              className="border px-8 py-6 text-base text-[#04070a]"
+              style={{
+                borderColor: `${hex400}66`,
+                backgroundColor: shades[500],
+                boxShadow: `0 0 30px -6px ${hex400}99`,
+              }}
             >
               Get today&apos;s news
             </Button>

@@ -3,6 +3,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { NewsFeed } from "@/app/components/news/NewsFeed";
+import { useColorTheme } from "@/app/context/ColorThemeContext";
 
 const READOUTS = [
   ["AP", "World", "12:04"],
@@ -35,10 +36,12 @@ const PULSES = [
 
 export default function NewsPage() {
   const reduceMotion = useReducedMotion();
+  const { theme } = useColorTheme();
+  const { hex400, shades } = theme;
 
   return (
     <div className="relative min-h-[calc(100vh-7rem)]">
-      {/* ===== full-height rain (soft glow + see-through) ===== */}
+      {/* full-height rain */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         {RAIN_COLUMNS.map((col, i) => (
           <motion.div
@@ -48,23 +51,18 @@ export default function NewsPage() {
               left: col.left,
               color:
                 i % 3 === 0
-                  ? "rgba(34,211,238,0.18)"
+                  ? `${hex400}2e`
                   : i % 3 === 1
-                    ? "rgba(34,211,238,0.12)"
+                    ? `${hex400}1f`
                     : "rgba(220,38,38,0.10)",
               textShadow:
-                i % 3 === 0
-                  ? "0 0 10px rgba(34,211,238,0.45)"
-                  : "0 0 6px rgba(34,211,238,0.25)",
-              // soft fade only at the very edges so tokens stay visible all the way down
+                i % 3 === 0 ? `0 0 10px ${hex400}73` : `0 0 6px ${hex400}40`,
               maskImage:
                 "linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)",
               WebkitMaskImage:
                 "linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)",
             }}
-            animate={
-              reduceMotion ? undefined : { y: ["-60%", "160%"] } // starts higher + travels further
-            }
+            animate={reduceMotion ? undefined : { y: ["-60%", "160%"] }}
             transition={{
               duration: col.duration,
               repeat: Infinity,
@@ -72,7 +70,6 @@ export default function NewsPage() {
               ease: "linear",
             }}
           >
-            {/* repeat the token list so the column is long enough to fill the page */}
             {[...col.tokens, ...col.tokens, ...col.tokens].map((t, j) => (
               <span key={j} className="select-none opacity-90">
                 {t}
@@ -86,11 +83,12 @@ export default function NewsPage() {
       {PULSES.map((s, i) => (
         <motion.span
           key={i}
-          className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full bg-cyan-300/80"
+          className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full"
           style={{
             top: s.top,
             left: s.left,
-            boxShadow: "0 0 8px 2px rgba(34,211,238,0.5)",
+            backgroundColor: shades[300],
+            boxShadow: `0 0 8px 2px ${hex400}80`,
           }}
           animate={reduceMotion ? undefined : { opacity: [0.05, 0.55, 0.05] }}
           transition={{
