@@ -1,6 +1,5 @@
 // app/page.tsx
 "use client";
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
@@ -10,7 +9,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Compass, RefreshCw, Archive, Globe2 } from "lucide-react";
 import { useColorTheme } from "@/app/context/ColorThemeContext";
 import { buildHudGridBackground } from "@/lib/colorThemes";
-
+import { ArchiveCarousel } from "@/app/components/news/ArchieveCarousel";
 const FEATURES = [
   {
     title: "AI-curated digest",
@@ -31,7 +30,6 @@ const FEATURES = [
     icon: Archive,
   },
 ];
-
 const PULSES = [
   { top: "10%", left: "8%", delay: 0 },
   { top: "18%", left: "88%", delay: 0.8 },
@@ -40,7 +38,6 @@ const PULSES = [
   { top: "40%", left: "95%", delay: 1.9 },
   { top: "52%", left: "3%", delay: 1.1 },
 ];
-
 const READOUTS = [
   ["WIRE", "AP", "24H"],
   ["WORLD", "BIZ", "TECH"],
@@ -48,19 +45,16 @@ const READOUTS = [
   ["DESK", "TOP", "BRK"],
   ["FEED", "SRC", "NET"],
 ];
-
 const RAIN_COLUMNS = Array.from({ length: 8 }).map((_, i) => ({
   left: `${(i / 7) * 100}%`,
   tokens: READOUTS[i % READOUTS.length],
   duration: 9 + (i % 4) * 1.8,
   delay: (i % 5) * 0.6,
 }));
-
 const flicker = {
   opacity: [0.55, 0.9, 0.5, 1, 0.6, 0.85, 0.55],
   scale: [0.95, 1.05, 0.92, 1.1, 0.97, 1.04, 0.95],
 };
-
 export default function Home() {
   const { isSignedIn } = useUser();
   const router = useRouter();
@@ -68,18 +62,15 @@ export default function Home() {
   const { theme } = useColorTheme();
   const { hex400, shades } = theme;
   const gridBg = useMemo(() => buildHudGridBackground(theme), [theme]);
-
   const spin = (reverse = false) =>
     reduceMotion ? undefined : { rotate: reverse ? -360 : 360 };
   const spinTransition = (duration: number) =>
     reduceMotion
       ? { duration: 0 }
       : { duration, repeat: Infinity, ease: "linear" as const };
-
   useEffect(() => {
     if (isSignedIn) router.prefetch("/news");
   }, [isSignedIn, router]);
-
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-stone-100">
       {/* coordinate-grid texture */}
@@ -91,7 +82,6 @@ export default function Home() {
         }}
       />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,_#0a1219_0%,_#04070a_70%)]" />
-
       {/* falling wire-term columns */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden opacity-70">
         {RAIN_COLUMNS.map((col, i) => (
@@ -120,7 +110,6 @@ export default function Home() {
           </motion.div>
         ))}
       </div>
-
       {/* idea-spark dust */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {PULSES.map((p, i) => (
@@ -138,7 +127,6 @@ export default function Home() {
           />
         ))}
       </div>
-
       <section className="relative mx-auto flex max-w-3xl flex-col items-center px-6 pb-16 pt-24 text-center">
         {/* flickering core */}
         <div className="relative mx-auto mb-10 flex h-32 w-32 items-center justify-center">
@@ -181,7 +169,6 @@ export default function Home() {
             <Globe2 className="h-9 w-9 text-[#04070a]" />
           </div>
         </div>
-
         <p
           className="text-sm font-medium tracking-wide"
           style={{ color: hex400 }}
@@ -197,7 +184,6 @@ export default function Home() {
           into a clean digest, and every run is saved so you can look back on
           any day&apos;s news.
         </p>
-
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {isSignedIn ? (
             <Button
@@ -249,6 +235,8 @@ export default function Home() {
           )}
         </div>
       </section>
+      {/* past headlines from the archive */}
+      <ArchiveCarousel />
 
       {/* feature rows */}
       <section className="relative mx-auto max-w-2xl px-6 py-16">
@@ -303,7 +291,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-
         {/* progress-bar echo */}
         <div
           className="mt-8 h-px w-full overflow-hidden rounded-full"
@@ -319,7 +306,6 @@ export default function Home() {
           />
         </div>
       </section>
-
       <section className="relative mx-auto max-w-2xl px-6 pb-24 text-center">
         <h2 className="text-2xl font-semibold text-stone-100">
           Ready for today&apos;s news?

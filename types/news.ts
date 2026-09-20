@@ -3,11 +3,16 @@
 // Thin, strictly-typed aliases over the Convex-generated document types so
 // components/hooks don't need to import from convex/_generated/dataModel
 // directly everywhere. No `any` anywhere in this pipeline.
+import type { FunctionReturnType } from "convex/server";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-
+import type { api } from "@/convex/_generated/api";
 export type NewsRun = Doc<"newsRuns">;
 export type NewsRunId = Id<"newsRuns">;
 export type NewsRunStatus = NewsRun["status"];
-
 export type NewsArticle = Doc<"newsArticles">;
 export type NewsArticleId = Id<"newsArticles">;
+
+/** One slide (picture + title) in the home-page archive carousel. */
+export type ArchiveCarouselItem = FunctionReturnType<
+  typeof api.news.getArchiveCarousel
+>[number];
